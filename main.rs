@@ -1,9 +1,7 @@
-//https://docs.rs/terminal-clipboard/latest/terminal_clipboard/
-//https://docs.rs/clap/latest/clap/index.html
-
 use clap::Parser;
 use terminal_clipboard;
 use std::net::TcpStream;
+use std::net::TcpListener;
 use std::io::{self, Write};
 
 /// Simple program to greet a person
@@ -11,29 +9,48 @@ use std::io::{self, Write};
 #[command(author, version, about, long_about = None)]
 
 struct Args {
-    ///Please specify port as well
+    ///IP and port to bind too. Format: 1.1.1.1:69
     #[arg(short, long)]
-    ip: String,
+    ip_port: String,
 
-    ///Change text inside of clipboard
+    ///Used to only accept communication from a certain IP
     #[arg(short, long)]
-    text: String,
+    access_ip: String,
 }
 
 fn main() {
+
     let args = Args::parse();
 
-    terminal_clipboard::set_string(args.text).unwrap();
-    let mut clipboard = terminal_clipboard::get_string().unwrap();
+    let listener = TcpListener::bind(args.ip_port).expect("CANT DO");
 
-    println!("Sending to IP address: {}", args.ip);
-    println!("Text in clipboard: {}", clipboard);
-
-    send_clip(args.ip, clipboard);
+    for stream in listener.incoming() 
+    {
+        match stream {
+            Ok(stream) => {
+                let peer_ip = stream.peer_addr().unwrap().ip();
+                let access_ip = match args.access_ip.parse::<std::net::IpAddr>() {
+                    Ok(ip) => ip,
+                    Err(_) => {
+                        println!("Invalid access IP address specified.");
+                        return;
+                    }
+                };
+                if peer_ip == access_ip{
+                    handle_client(stream);
+                } else {
+                    println!("Connection from {} not allowed.", peer_ip);
+                    // Optionally, you can send a rejection message to the client here.
+                }
+            }
+            Err(e) => { println!("Connection failed"); }
+        }
+    }
 }
 
-fn send_clip(ip: String, clipb: String)
+fn handle_client(stream: TcpStream)
 {
-    let mut stream = TcpStream::connect(ip);
-    stream.expect("Could not do thing").write(clipb.as_bytes());
+    //Code here
 }
+
+
