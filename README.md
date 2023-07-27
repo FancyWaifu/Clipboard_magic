@@ -1,6 +1,8 @@
 # Clipboard_magic
 This is a command line tool that takes whatever is in your clipboard and sends it to another machine
 
+You will need to change main2.rs to main.rs and Cargo2.toml to Cargo.toml in the folder
+
 #Steps to run it (still in development so you need to compile yourself)
 1) open termianl and type, cargo new *whatever name you want*
 2) download the main.rs and Cargo.toml file
